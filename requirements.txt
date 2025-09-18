@@ -1,0 +1,10 @@
+pandas>=2.2
+numpy>=1.26
+requests>=2.32
+statsmodels>=0.14
+tradingeconomics>=4.5.0
+python-dateutil>=2.9
+plotly>=5.23
+streamlit>=1.37
+yfinance>=0.2.60
+xlsxwriter>=3.2.0

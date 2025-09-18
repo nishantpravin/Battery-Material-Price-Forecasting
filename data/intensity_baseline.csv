@@ -1,0 +1,43 @@
+chemistry,material,tons_per_gwh,notes
+NMC811,Nickel,22.0,high-Ni cathode contribution
+NMC811,Cobalt,2.8,
+NMC811,Manganese,2.5,
+NMC811,Lithium Carbonate,3.4,Li2CO3 equiv
+NMC811,Graphite,45.0,anode
+NMC811,Copper,20.0,current collectors
+NMC811,Aluminum,10.0,current collectors
+NMC622,Nickel,16.5,
+NMC622,Cobalt,5.0,
+NMC622,Manganese,3.5,
+NMC622,Lithium Carbonate,3.6,
+NMC622,Graphite,45.0,
+NMC622,Copper,20.0,
+NMC622,Aluminum,10.0,
+NMC532,Nickel,12.5,
+NMC532,Cobalt,6.5,
+NMC532,Manganese,4.5,
+NMC532,Lithium Carbonate,3.8,
+NMC532,Graphite,45.0,
+NMC532,Copper,20.0,
+NMC532,Aluminum,10.0,
+LFP,Phosphate Rock,14.0,proxy for P chain
+LFP,Iron Ore,12.0,proxy for Fe chain
+LFP,Lithium Carbonate,3.8,
+LFP,Graphite,48.0,
+LFP,Copper,22.0,
+LFP,Aluminum,12.0,
+LCO,Cobalt,28.0,
+LCO,Lithium Carbonate,3.6,
+LCO,Graphite,42.0,
+LCO,Copper,18.0,
+LCO,Aluminum,9.0,
+NMC811,Zinc,2.0,electrolyte additives
+NMC622,Zinc,2.0,electrolyte additives
+NMC532,Zinc,2.0,electrolyte additives
+LFP,Zinc,2.0,electrolyte additives
+LCO,Zinc,2.0,electrolyte additives
+NMC811,Lead,1.5,battery management
+NMC622,Lead,1.5,battery management
+NMC532,Lead,1.5,battery management
+LFP,Lead,1.5,battery management
+LCO,Lead,1.5,battery management
