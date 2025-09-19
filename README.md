@@ -86,34 +86,6 @@ battery-cost-forecast/
 └── README.md
 ```
 
-## 🌐 Deployment
-
-### Streamlit Cloud (Recommended)
-
-1. **Push to GitHub:**
-```bash
-git add .
-git commit -m "Initial commit: Battery Cost Forecast App"
-git remote add origin https://github.com/yourusername/battery-cost-forecast.git
-git push -u origin main
-```
-
-2. **Deploy on Streamlit Cloud:**
-   - Go to [share.streamlit.io](https://share.streamlit.io)
-   - Connect your GitHub account
-   - Select your repository
-   - Click "Deploy!"
-
-3. **Set Secrets (Optional):**
-   - In Streamlit Cloud dashboard
-   - Go to "Settings" → "Secrets"
-   - Add any environment variables you need
-
-### Local Deployment
-```bash
-streamlit run app/app.py --server.port 8501 --server.address 0.0.0.0
-```
-
 ## 📈 Usage Examples
 
 ### Basic Forecasting
