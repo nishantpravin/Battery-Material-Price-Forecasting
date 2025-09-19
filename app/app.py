@@ -206,14 +206,91 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Load data
+# Load data with better error handling
+data_loaded = False
+mat = None
+chem_mo = None
+inten = None
+symbols = {}
+
 try:
-    mat = pd.read_csv("processed/material_forecasts.csv", parse_dates=["date"])  # date, material, price_usd_per_ton, kind
-    chem_mo = pd.read_csv("processed/chemistry_costs_monthly.csv", parse_dates=["date"])  # date, chemistry, usd_per_gwh, kind
-    inten = pd.read_csv("data/intensity_baseline.csv")  # chemistry,material,tons_per_gwh,notes
-    symbols = json.loads(Path("processed/symbols_te.json").read_text()) if Path("processed/symbols_te.json").exists() else {}
-except Exception:
-    st.error("❌ Processed files not found.\n\n**To fix this, run:**\n```bash\npython scripts/fetch_prices_fallback.py\npython scripts/build_forecasts.py\n```")
+    # Check if processed files exist
+    if Path("processed/material_forecasts.csv").exists() and Path("processed/chemistry_costs_monthly.csv").exists():
+        mat = pd.read_csv("processed/material_forecasts.csv", parse_dates=["date"])
+        chem_mo = pd.read_csv("processed/chemistry_costs_monthly.csv", parse_dates=["date"])
+        data_loaded = True
+    else:
+        st.warning("⚠️ **No processed data found.** This is normal for first-time deployment.")
+        
+    # Load intensity data (should always exist)
+    inten = pd.read_csv("data/intensity_baseline.csv")
+    
+    # Load symbols metadata if available
+    if Path("processed/symbols_te.json").exists():
+        symbols = json.loads(Path("processed/symbols_te.json").read_text())
+        
+except Exception as e:
+    st.error(f"❌ **Error loading data:** {str(e)}")
+    st.stop()
+
+# Show initialization message if no data
+if not data_loaded:
+    st.markdown("## 🔋 Battery Cost Forecast App")
+    st.markdown("### Welcome! Let's get started...")
+    
+    st.info("""
+    **This app forecasts battery material costs and chemistry prices.**
+    
+    To begin, you need to initialize the data by running the data processing scripts.
+    """)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### 🌐 **Option 1: Use Live Data (Recommended)**")
+        st.markdown("Fetch real-time commodity prices from APIs")
+        if st.button("🚀 Initialize with Live Data", help="Fetch live prices and build forecasts"):
+            with st.spinner("Fetching live data and building forecasts..."):
+                try:
+                    # Run the data fetching and building scripts
+                    result1 = subprocess.run([sys.executable, "scripts/fetch_real_commodity_prices.py"], 
+                                           capture_output=True, text=True)
+                    result2 = subprocess.run([sys.executable, "scripts/build_forecasts.py"], 
+                                           capture_output=True, text=True)
+                    
+                    if result1.returncode == 0 and result2.returncode == 0:
+                        st.success("✅ Data initialized successfully! Refreshing app...")
+                        st.rerun()
+                    else:
+                        st.error("❌ Initialization failed. Check the logs below:")
+                        with st.expander("Fetch Script Logs"):
+                            st.code(result1.stdout + "\n" + result1.stderr)
+                        with st.expander("Build Script Logs"):
+                            st.code(result2.stdout + "\n" + result2.stderr)
+                except Exception as e:
+                    st.error(f"❌ Error during initialization: {e}")
+    
+    with col2:
+        st.markdown("#### 📁 **Option 2: Upload Your Data**")
+        st.markdown("Upload CSV/Excel files with your own price data")
+        st.markdown("**Steps:**")
+        st.markdown("1. Switch to 'Physical Mode' in the sidebar")
+        st.markdown("2. Upload your CSV/Excel files")
+        st.markdown("3. Click 'Process Uploaded Files'")
+    
+    st.markdown("---")
+    st.markdown("### 📋 **Manual Setup (Advanced)**")
+    st.markdown("If you prefer to run scripts manually, use these commands:")
+    st.code("""
+# For live data:
+python scripts/fetch_real_commodity_prices.py
+python scripts/build_forecasts.py
+
+# For uploaded data:
+python scripts/process_uploaded_data.py
+python scripts/build_forecasts.py
+    """)
+    
     st.stop()
 
 # Normalize intensity names to price columns
