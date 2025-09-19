@@ -533,53 +533,61 @@ with st.sidebar.expander("⚙️ Model Configuration", expanded=False):
 
 # Date Range Filter - More Prominent (only if data is loaded)
 if data_loaded and mat is not None:
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📅 Date Range Filter")
-    st.sidebar.markdown("**Select date range for forecasts:**")
+    try:
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### 📅 Date Range Filter")
+        st.sidebar.markdown("**Select date range for forecasts:**")
 
-    # Get date range from data
-    min_date = mat['date'].min().date()
-    max_date = mat['date'].max().date()
+        # Get date range from data
+        min_date = mat['date'].min().date()
+        max_date = mat['date'].max().date()
 
-    # Default to show last 2 years of history + 5 years of forecast
-    default_start = pd.Timestamp.today().date() - pd.DateOffset(years=2)
-    default_end = pd.Timestamp.today().date() + pd.DateOffset(years=5)
+        # Default to show last 2 years of history + 5 years of forecast
+        default_start = pd.Timestamp.today().date() - pd.DateOffset(years=2)
+        default_end = pd.Timestamp.today().date() + pd.DateOffset(years=5)
 
-    start_date = st.sidebar.date_input(
-        "Start Date",
-        value=default_start,
-        min_value=min_date,
-        max_value=max_date,
-        help="Start date for data display",
-        key="date_filter_start"
-    )
+        start_date = st.sidebar.date_input(
+            "Start Date",
+            value=default_start,
+            min_value=min_date,
+            max_value=max_date,
+            help="Start date for data display",
+            key="date_filter_start"
+        )
 
-    end_date = st.sidebar.date_input(
-        "End Date", 
-        value=default_end,
-        min_value=min_date,
-        max_value=max_date,
-        help="End date for data display",
-        key="date_filter_end"
-    )
-    # Quick preset buttons
-    st.sidebar.markdown("**Quick presets:**")
-    col1, col2 = st.sidebar.columns(2)
-    with col1:
-        preset_2y5y = st.button("📈 2Y+5Y", help="Last 2 years + 5 years forecast", key="preset_2y5y")
-    with col2:
-        preset_10y = st.button("🔮 10Y", help="Full 10-year forecast", key="preset_10y")
+        end_date = st.sidebar.date_input(
+            "End Date", 
+            value=default_end,
+            min_value=min_date,
+            max_value=max_date,
+            help="End date for data display",
+            key="date_filter_end"
+        )
+        
+        # Quick preset buttons
+        st.sidebar.markdown("**Quick presets:**")
+        col1, col2 = st.sidebar.columns(2)
+        with col1:
+            preset_2y5y = st.button("📈 2Y+5Y", help="Last 2 years + 5 years forecast", key="preset_2y5y")
+        with col2:
+            preset_10y = st.button("🔮 10Y", help="Full 10-year forecast", key="preset_10y")
 
-    # Handle preset selections
-    if preset_2y5y:
+        # Handle preset selections
+        if preset_2y5y:
+            start_date = pd.Timestamp.today().date() - pd.DateOffset(years=2)
+            end_date = pd.Timestamp.today().date() + pd.DateOffset(years=5)
+        elif preset_10y:
+            start_date = pd.Timestamp.today().date() - pd.DateOffset(years=1)
+            end_date = pd.Timestamp.today().date() + pd.DateOffset(years=10)
+
+        # Show current selection
+        st.sidebar.info(f"📊 Showing data from **{start_date}** to **{end_date}**")
+        
+    except Exception as e:
+        st.sidebar.error(f"Date filter error: {e}")
+        # Default dates when there's an error
         start_date = pd.Timestamp.today().date() - pd.DateOffset(years=2)
         end_date = pd.Timestamp.today().date() + pd.DateOffset(years=5)
-    elif preset_10y:
-        start_date = pd.Timestamp.today().date() - pd.DateOffset(years=1)
-        end_date = pd.Timestamp.today().date() + pd.DateOffset(years=10)
-
-    # Show current selection
-    st.sidebar.info(f"📊 Showing data from **{start_date}** to **{end_date}**")
 else:
     # Default dates when no data is loaded
     start_date = pd.Timestamp.today().date() - pd.DateOffset(years=2)
