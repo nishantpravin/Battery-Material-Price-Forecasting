@@ -543,10 +543,10 @@ if data_loaded and mat is not None:
         max_date = mat['date'].max().date()
 
         # Default to show last 2 years of history + available forecast
-        default_start = pd.Timestamp.today().date() - pd.DateOffset(years=2)
+        default_start = (pd.Timestamp.today() - pd.DateOffset(years=2)).date()
         # Ensure default end date doesn't exceed available data
         default_end = min(
-            pd.Timestamp.today().date() + pd.DateOffset(years=5),
+            (pd.Timestamp.today() + pd.DateOffset(years=5)).date(),
             max_date
         )
 
@@ -578,15 +578,15 @@ if data_loaded and mat is not None:
 
         # Handle preset selections
         if preset_2y5y:
-            start_date = pd.Timestamp.today().date() - pd.DateOffset(years=2)
+            start_date = (pd.Timestamp.today() - pd.DateOffset(years=2)).date()
             end_date = min(
-                pd.Timestamp.today().date() + pd.DateOffset(years=5),
+                (pd.Timestamp.today() + pd.DateOffset(years=5)).date(),
                 max_date
             )
         elif preset_10y:
-            start_date = pd.Timestamp.today().date() - pd.DateOffset(years=1)
+            start_date = (pd.Timestamp.today() - pd.DateOffset(years=1)).date()
             end_date = min(
-                pd.Timestamp.today().date() + pd.DateOffset(years=10),
+                (pd.Timestamp.today() + pd.DateOffset(years=10)).date(),
                 max_date
             )
 
@@ -596,12 +596,12 @@ if data_loaded and mat is not None:
     except Exception as e:
         st.sidebar.error(f"Date filter error: {e}")
         # Default dates when there's an error
-        start_date = pd.Timestamp.today().date() - pd.DateOffset(years=2)
-        end_date = pd.Timestamp.today().date() + pd.DateOffset(years=3)  # Shorter default
+        start_date = (pd.Timestamp.today() - pd.DateOffset(years=2)).date()
+        end_date = (pd.Timestamp.today() + pd.DateOffset(years=3)).date()  # Shorter default
 else:
     # Default dates when no data is loaded
-    start_date = pd.Timestamp.today().date() - pd.DateOffset(years=2)
-    end_date = pd.Timestamp.today().date() + pd.DateOffset(years=3)  # Shorter default
+    start_date = (pd.Timestamp.today() - pd.DateOffset(years=2)).date()
+    end_date = (pd.Timestamp.today() + pd.DateOffset(years=3)).date()  # Shorter default
 
 # Actions
 with st.sidebar.expander("🔄 Data Management", expanded=False):
