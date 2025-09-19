@@ -542,9 +542,13 @@ if data_loaded and mat is not None:
         min_date = mat['date'].min().date()
         max_date = mat['date'].max().date()
 
-        # Default to show last 2 years of history + 5 years of forecast
+        # Default to show last 2 years of history + available forecast
         default_start = pd.Timestamp.today().date() - pd.DateOffset(years=2)
-        default_end = pd.Timestamp.today().date() + pd.DateOffset(years=5)
+        # Ensure default end date doesn't exceed available data
+        default_end = min(
+            pd.Timestamp.today().date() + pd.DateOffset(years=5),
+            max_date
+        )
 
         start_date = st.sidebar.date_input(
             "Start Date",
@@ -575,10 +579,16 @@ if data_loaded and mat is not None:
         # Handle preset selections
         if preset_2y5y:
             start_date = pd.Timestamp.today().date() - pd.DateOffset(years=2)
-            end_date = pd.Timestamp.today().date() + pd.DateOffset(years=5)
+            end_date = min(
+                pd.Timestamp.today().date() + pd.DateOffset(years=5),
+                max_date
+            )
         elif preset_10y:
             start_date = pd.Timestamp.today().date() - pd.DateOffset(years=1)
-            end_date = pd.Timestamp.today().date() + pd.DateOffset(years=10)
+            end_date = min(
+                pd.Timestamp.today().date() + pd.DateOffset(years=10),
+                max_date
+            )
 
         # Show current selection
         st.sidebar.info(f"📊 Showing data from **{start_date}** to **{end_date}**")
@@ -587,11 +597,11 @@ if data_loaded and mat is not None:
         st.sidebar.error(f"Date filter error: {e}")
         # Default dates when there's an error
         start_date = pd.Timestamp.today().date() - pd.DateOffset(years=2)
-        end_date = pd.Timestamp.today().date() + pd.DateOffset(years=5)
+        end_date = pd.Timestamp.today().date() + pd.DateOffset(years=3)  # Shorter default
 else:
     # Default dates when no data is loaded
     start_date = pd.Timestamp.today().date() - pd.DateOffset(years=2)
-    end_date = pd.Timestamp.today().date() + pd.DateOffset(years=5)
+    end_date = pd.Timestamp.today().date() + pd.DateOffset(years=3)  # Shorter default
 
 # Actions
 with st.sidebar.expander("🔄 Data Management", expanded=False):
