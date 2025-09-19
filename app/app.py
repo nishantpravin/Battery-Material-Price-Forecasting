@@ -228,6 +228,133 @@ chems_all = sorted(inten["chemistry"].unique())
 # Enhanced Sidebar
 st.sidebar.markdown("## ⚙️ Control Panel")
 
+# Data Source Mode Selection
+st.sidebar.markdown("### 🔧 Data Source Mode")
+data_mode = st.sidebar.radio(
+    "Choose data source:",
+    ["API Mode (Live Data)", "Physical Mode (Upload Files)"],
+    help="API Mode fetches live prices, Physical Mode uses uploaded files",
+    key="data_source_mode"
+)
+
+# Physical Mode - File Upload Section
+if data_mode == "Physical Mode (Upload Files)":
+    st.sidebar.markdown("### 📁 Upload Price Files")
+    st.sidebar.markdown("**Upload CSV/Excel files with material prices**")
+    
+    # File format info
+    with st.sidebar.expander("📋 Expected File Format", expanded=False):
+        st.markdown("""
+        **CSV/Excel Format Options:**
+        
+        **Option 1: Multiple materials in one file**
+        ```
+        date,material,price_usd_per_ton
+        2024-01-01,lithium_carbonate,25000
+        2024-01-01,nickel,20000
+        2024-02-01,lithium_carbonate,24000
+        ```
+        
+        **Option 2: Single material per file**
+        ```
+        date,price_usd_per_ton
+        2024-01-01,25000
+        2024-02-01,24000
+        ```
+        
+        **Supported Materials:**
+        - lithium_carbonate, nickel, cobalt
+        - manganese_sulfate, graphite_battery
+        - copper, aluminum
+        """)
+        
+        # Download sample file
+        sample_file = Path("data/sample_material_prices.csv")
+        if sample_file.exists():
+            with open(sample_file, 'rb') as f:
+                st.download_button(
+                    "📥 Download Sample CSV",
+                    f.read(),
+                    "sample_material_prices.csv",
+                    "text/csv"
+                )
+    
+    # File uploader
+    uploaded_files = st.sidebar.file_uploader(
+        "Choose files",
+        type=['csv', 'xlsx', 'xls'],
+        accept_multiple_files=True,
+        help="Upload CSV or Excel files with material price data"
+    )
+    
+    if uploaded_files:
+        st.sidebar.success(f"📁 {len(uploaded_files)} file(s) uploaded")
+        
+        # Process uploaded files
+        uploaded_data = {}
+        for file in uploaded_files:
+            try:
+                if file.name.endswith('.csv'):
+                    df = pd.read_csv(file)
+                else:  # Excel files
+                    df = pd.read_excel(file)
+                
+                # Show file preview
+                with st.sidebar.expander(f"📄 {file.name}", expanded=False):
+                    st.dataframe(df.head(), use_container_width=True)
+                    st.caption(f"Shape: {df.shape}")
+                
+                uploaded_data[file.name] = df
+                
+            except Exception as e:
+                st.sidebar.error(f"❌ Error reading {file.name}: {str(e)}")
+        
+        # Save uploaded data to processed folder
+        if uploaded_data:
+            processed_dir = Path("processed")
+            processed_dir.mkdir(exist_ok=True)
+            
+            # Save each file
+            for filename, df in uploaded_data.items():
+                output_path = processed_dir / f"uploaded_{filename}"
+                if filename.endswith('.csv'):
+                    df.to_csv(output_path, index=False)
+                else:
+                    df.to_excel(output_path, index=False)
+            
+            st.sidebar.success("✅ Files saved to processed/ folder")
+            
+            # Option to use uploaded data for forecasting
+            if st.sidebar.button("🔄 Use Uploaded Data for Forecasting", help="Process uploaded files and rebuild forecasts"):
+                with st.spinner("Processing uploaded data..."):
+                    try:
+                        # Run a custom script to process uploaded data
+                        result = subprocess.run([
+                            sys.executable, "scripts/process_uploaded_data.py"
+                        ], capture_output=True, text=True)
+                        
+                        if result.returncode == 0:
+                            st.sidebar.success("✅ Forecasts updated with uploaded data!")
+                            st.rerun()
+                        else:
+                            st.sidebar.error("❌ Error processing uploaded data")
+                            st.sidebar.code(result.stderr)
+                    except Exception as e:
+                        st.sidebar.error(f"❌ Error: {e}")
+
+# API Mode - Live Data Section
+else:
+    st.sidebar.markdown("### 🌐 Live Data Sources")
+    st.sidebar.info("""
+    **Current API Sources:**
+    - 🔌 Copper: Yahoo Finance (HG=F)
+    - 🛩️ Aluminum: Yahoo Finance (ALI=F)  
+    - ⚡ Nickel: LIT ETF (scaled)
+    - 🔋 Lithium: Manual CSV + LIT ETF
+    - 🧲 Cobalt: LAC ETF (scaled)
+    - 📊 Graphite/MnSO₄: Baselines
+    """)
+
 # Series Selection
 with st.sidebar.expander("📊 Data Series", expanded=True):
     sel_materials = st.multiselect(
@@ -327,58 +454,118 @@ with st.sidebar.expander("⚙️ Model Configuration", expanded=False):
         help="Number of months to forecast ahead (FORECAST_MONTHS)"
     )
 
-# Date Range Filter
-with st.sidebar.expander("📅 Date Range Filter", expanded=False):
-    st.markdown("**Select date range for forecasts:**")
-    
-    # Get date range from data
-    min_date = mat['date'].min().date()
-    max_date = mat['date'].max().date()
-    
-    # Default to show last 2 years of history + 5 years of forecast
-    default_start = pd.Timestamp.today().date() - pd.DateOffset(years=2)
-    default_end = pd.Timestamp.today().date() + pd.DateOffset(years=5)
-    
-    start_date = st.date_input(
-        "Start Date",
-        value=default_start,
-        min_value=min_date,
-        max_value=max_date,
-        help="Start date for data display"
-    )
-    
-    end_date = st.date_input(
-        "End Date", 
-        value=default_end,
-        min_value=min_date,
-        max_value=max_date,
-        help="End date for data display"
-    )
+# Date Range Filter - More Prominent
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📅 Date Range Filter")
+st.sidebar.markdown("**Select date range for forecasts:**")
+
+# Get date range from data
+min_date = mat['date'].min().date()
+max_date = mat['date'].max().date()
+
+# Default to show last 2 years of history + 5 years of forecast
+default_start = pd.Timestamp.today().date() - pd.DateOffset(years=2)
+default_end = pd.Timestamp.today().date() + pd.DateOffset(years=5)
+
+start_date = st.sidebar.date_input(
+    "Start Date",
+    value=default_start,
+    min_value=min_date,
+    max_value=max_date,
+    help="Start date for data display",
+    key="date_filter_start"
+)
+
+end_date = st.sidebar.date_input(
+    "End Date", 
+    value=default_end,
+    min_value=min_date,
+    max_value=max_date,
+    help="End date for data display",
+    key="date_filter_end"
+)
+
+# Quick preset buttons
+st.sidebar.markdown("**Quick presets:**")
+col1, col2 = st.sidebar.columns(2)
+with col1:
+    preset_2y5y = st.button("📈 2Y+5Y", help="Last 2 years + 5 years forecast", key="preset_2y5y")
+with col2:
+    preset_10y = st.button("🔮 10Y", help="Full 10-year forecast", key="preset_10y")
+
+# Handle preset selections
+if preset_2y5y:
+    start_date = pd.Timestamp.today().date() - pd.DateOffset(years=2)
+    end_date = pd.Timestamp.today().date() + pd.DateOffset(years=5)
+elif preset_10y:
+    start_date = pd.Timestamp.today().date() - pd.DateOffset(years=1)
+    end_date = pd.Timestamp.today().date() + pd.DateOffset(years=10)
+else:
+    # Use the date inputs as they are
+    pass
+
+# Show current selection
+st.sidebar.info(f"📊 Showing data from **{start_date}** to **{end_date}**")
 
 # Actions
 with st.sidebar.expander("🔄 Data Management", expanded=False):
-    if st.button("🔄 Refresh Data (fetch + build)", help="Fetch live prices and rebuild models"):
-        with st.spinner("Fetching live prices and rebuilding models..."):
+    if data_mode == "API Mode (Live Data)":
+        if st.button("🔄 Refresh Data (fetch + build)", help="Fetch live prices and rebuild models"):
+            with st.spinner("Fetching live prices and rebuilding models..."):
+                try:
+                    # Set environment variables for the subprocess calls
+                    env = os.environ.copy()
+                    env["ROLLING_MONTHS"] = str(rolling_months)
+                    env["FORECAST_MONTHS"] = str(forecast_months)
+                    
+                    p1 = subprocess.run([sys.executable, "scripts/fetch_real_commodity_prices.py"], capture_output=True, text=True, env=env)
+                    p2 = subprocess.run([sys.executable, "scripts/build_forecasts.py"], capture_output=True, text=True, env=env)
+                    
+                    if p1.returncode == 0 and p2.returncode == 0:
+                        st.success("Data refreshed. Please rerun the app (R) or use Streamlit's rerun.")
+                        st.rerun()
+                    else:
+                        st.error("Refresh failed — expand for logs.")
+                        with st.expander("Fetch logs"):
+                            st.code(p1.stdout + "\n" + p1.stderr)
+                        with st.expander("Build logs"):
+                            st.code(p2.stdout + "\n" + p2.stderr)
+                except Exception as e:
+                    st.error(f"❌ Refresh error: {e}")
+    else:
+        # Physical Mode - different options
+        if st.button("🔄 Process Uploaded Files", help="Process uploaded files and rebuild forecasts"):
+            with st.spinner("Processing uploaded files..."):
+                try:
+                    # Set environment variables for the subprocess calls
+                    env = os.environ.copy()
+                    env["ROLLING_MONTHS"] = str(rolling_months)
+                    env["FORECAST_MONTHS"] = str(forecast_months)
+                    
+                    p1 = subprocess.run([sys.executable, "scripts/process_uploaded_data.py"], capture_output=True, text=True, env=env)
+                    p2 = subprocess.run([sys.executable, "scripts/build_forecasts.py"], capture_output=True, text=True, env=env)
+                    
+                    if p1.returncode == 0 and p2.returncode == 0:
+                        st.success("Uploaded data processed and forecasts updated!")
+                        st.rerun()
+                    else:
+                        st.error("Processing failed — expand for logs.")
+                        with st.expander("Process logs"):
+                            st.code(p1.stdout + "\n" + p1.stderr)
+                        with st.expander("Build logs"):
+                            st.code(p2.stdout + "\n" + p2.stderr)
+                except Exception as e:
+                    st.error(f"❌ Processing error: {e}")
+        
+        if st.button("🗑️ Clear Uploaded Files", help="Remove all uploaded files"):
             try:
-                # Set environment variables for the subprocess calls
-                env = os.environ.copy()
-                env["ROLLING_MONTHS"] = str(rolling_months)
-                env["FORECAST_MONTHS"] = str(forecast_months)
-                
-                p1 = subprocess.run([sys.executable, "scripts/fetch_real_commodity_prices.py"], capture_output=True, text=True, env=env)
-                p2 = subprocess.run([sys.executable, "scripts/build_forecasts.py"], capture_output=True, text=True, env=env)
-                
-                if p1.returncode == 0 and p2.returncode == 0:
-                    st.success("Data refreshed. Please rerun the app (R) or use Streamlit's rerun.")
-                    st.rerun()
-                else:
-                    st.error("Refresh failed — expand for logs.")
-                    with st.expander("Fetch logs"):
-                        st.code(p1.stdout + "\n" + p1.stderr)
-                    with st.expander("Build logs"):
-                        st.code(p2.stdout + "\n" + p2.stderr)
+                uploaded_files = list(Path("processed").glob("uploaded_*"))
+                for file in uploaded_files:
+                    file.unlink()
+                st.success(f"✅ Removed {len(uploaded_files)} uploaded file(s)")
+                st.rerun()
             except Exception as e:
-                st.error(f"❌ Refresh error: {e}")
+                st.error(f"❌ Error clearing files: {e}")
         
         # Data status
         st.markdown("**Data Status**")
